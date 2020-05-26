@@ -94,14 +94,38 @@ void CreateRelocs(LPVOID lpMapped, uintptr_t functionAddress)
 			if (pRelocationData[i] > relocToInsert // Address is bigger
 				|| ((PIMAGE_BASE_RELOCATION)((char*)pRelocTable + pRelocTable->SizeOfBlock) == 0 && (pRelocationData[i] >> 0xC) == IMAGE_REL_BASED_ABSOLUTE)) // Hit the end of the last reloc table
 			{
+				/***********Insert Relocation***********/
 				uintptr_t source = (uintptr_t)pRelocationData + i * 2;
 				uintptr_t dest = (uintptr_t)pRelocationData + i * 2 + 2;
-
 				SIZE_T length = ((uintptr_t)pRelocTableLast) - source;
 
 				memmove((short*)dest, (short*)source, length);
 				pRelocationData[i] = relocToInsert;
 				pRelocTable->SizeOfBlock += 2;
+				//NumberOfRelocationData++;
+
+				/**************Fix Padding**************/
+
+				if (pRelocationData[NumberOfRelocationData] >> 0xC == IMAGE_REL_BASED_ABSOLUTE)
+				{
+					uintptr_t source2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2;
+					uintptr_t dest2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2 - 2;
+					SIZE_T length2 = ((uintptr_t)pRelocTableLast) - source2;
+
+					memmove((short*)dest2, (short*)source2, length2);
+					pRelocTable->SizeOfBlock -= 2;
+				}
+				else
+				{
+					uintptr_t source2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2 + 2;
+					uintptr_t dest2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2 + 4;
+					SIZE_T length2 = ((uintptr_t)pRelocTableLast) - source2;
+
+					memmove((short*)dest2, (short*)source2, length2);
+					pRelocationData[NumberOfRelocationData + 1] = 0;
+					pRelocTable->SizeOfBlock += 2;
+				}
+
 				return;
 			}
 		}
