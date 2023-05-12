@@ -45,13 +45,12 @@ DWORD GetFunctionAddress(PVOID base, LPCSTR name)
 
 			pAddrThunk = (PIMAGE_THUNK_DATA)((char*)base + RvaToOffset(pNTH, pDescriptor->FirstThunk));
 
-			PIMAGE_THUNK_DATA pAddrThunk2 = (PIMAGE_THUNK_DATA)((DWORD)0x00400000 + pDescriptor->FirstThunk);
+			PIMAGE_THUNK_DATA pAddrThunk2 = (PIMAGE_THUNK_DATA)((DWORD)pNTH->OptionalHeader.ImageBase + pDescriptor->FirstThunk);
 			while (pThunk->u1.AddressOfData)
 			{
 				PIMAGE_IMPORT_BY_NAME pImport = (PIMAGE_IMPORT_BY_NAME)((char*)base + RvaToOffset(pNTH, pThunk->u1.AddressOfData));
 				if (!strcmp(pImport->Name, name))
 				{
-					DWORD a = pAddrThunk - (PIMAGE_THUNK_DATA)base + (pISH[1].VirtualAddress - pISH[1].PointerToRawData);
 					return (DWORD)pAddrThunk2;
 				}
 
@@ -110,8 +109,8 @@ void CreateRelocs(LPVOID lpMapped, uintptr_t functionAddress)
 
 				if (pRelocationData[NumberOfRelocationData] >> 0xC == IMAGE_REL_BASED_ABSOLUTE)
 				{
-					uintptr_t source2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2;
-					uintptr_t dest2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2 - 2;
+					uintptr_t source2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2 + 4;
+					uintptr_t dest2 = (uintptr_t)pRelocationData + NumberOfRelocationData * 2 + 2;
 					SIZE_T length2 = ((uintptr_t)pRelocTableLast) - source2;
 
 					memmove((short*)dest2, (short*)source2, length2);
