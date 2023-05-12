@@ -63,6 +63,8 @@ DWORD GetFunctionAddress(PVOID base, LPCSTR name)
 
 		pDescriptor++;
 	}
+
+	return 0;
 }
 
 // Process relocations
@@ -201,6 +203,13 @@ int main(int argc, char** argv)
 	printf("Set %s characteristics to IMAGE_SCN_MEM_EXECUTE\n", pISH[sectionIndex].Name);
 
 	uintptr_t functionAddr = GetFunctionAddress(lpMapped, "MessageBoxA");
+	if (!functionAddr)
+	{
+		printf("The specified API does not exist in the program's IAT!");
+		getchar();
+		return -1;
+	}
+		
 	*(uintptr_t*)(shellcode + MESSAGEBOXA_OFFSET) = functionAddr; // Add MessageBoxA
 	uintptr_t rva = pNTH->OptionalHeader.AddressOfEntryPoint - pISH[sectionIndex].VirtualAddress - (InsertionPointOffset - pISH[sectionIndex].PointerToRawData) - (SHELLCODE_JMP_ADR_OFFSET + 4); //JMP to original Entrypoint
 	*(uintptr_t*)(shellcode + SHELLCODE_JMP_ADR_OFFSET) = rva;
